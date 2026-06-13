@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Idébank</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #faf9f7; color: #1a1a1a; padding: 24px 16px; max-width: 600px; margin: 0 auto; }
+.tabs { display: flex; border-bottom: 1px solid #e0ddd8; margin-bottom: 24px; }
+.tab { padding: 10px 20px; font-size: 14px; font-weight: 400; color: #888; border: none; background: transparent; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.tab.active { color: #1a1a1a; font-weight: 500; border-bottom-color: #1a1a1a; }
+.field { margin-bottom: 16px; }
+label { display: block; font-size: 12px; color: #888; margin-bottom: 4px; letter-spacing: 0.03em; }
+input, textarea { width: 100%; background: #fff; color: #1a1a1a; border: 1px solid #e0ddd8; border-radius: 8px; font-family: inherit; font-size: 15px; padding: 10px 12px; }
+textarea { resize: vertical; }
+input:focus, textarea:focus { outline: none; border-color: #1a1a1a; }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.req { color: #c0392b; margin-left: 2px; }
+.btn { width: 100%; padding: 14px; border: 1px solid #1a1a1a; border-radius: 8px; background: #1a1a1a; color: #fff; font-family: inherit; font-size: 15px; font-weight: 500; cursor: pointer; margin-top: 8px; }
+.btn:disabled { opacity: 0.5; }
+.msg { margin-top: 12px; padding: 12px 16px; border-radius: 8px; font-size: 14px; display: none; }
+.msg.ok { background: #e8f5e9; color: #2e7d32; display: block; }
+.msg.err { background: #fdecea; color: #c0392b; display: block; }
+h1 { font-size: 18px; font-weight: 500; margin-bottom: 24px; }
+</style>
+</head>
+<body>
+<h1>Idébank</h1>
+<div class="tabs">
+  <button class="tab active" onclick="setTab('IDÉ BANK', this)">IDÉ BANK</button>
+  <button class="tab" onclick="setTab('LINKEDIN', this)">LINKEDIN</button>
+</div>
+<div class="field">
+  <label>Idé / Concept<span class="req">*</span></label>
+  <textarea id="ide" rows="4" style="min-height:90px;" placeholder="Beskriv idéen…"></textarea>
+</div>
+<div class="row">
+  <div class="field">
+    <label>Kategori</label>
+    <input id="kategori" type="text" placeholder="fx. Interiør, Rejse…" />
+  </div>
+  <div class="field">
+    <label>Inspiration</label>
+    <input id="inspiration" type="text" placeholder="fx. profil, sted…" />
+  </div>
+</div>
+<div class="row">
+  <div class="field">
+    <label>Dato</label>
+    <input id="dato" type="date" />
+  </div>
+  <div class="field">
+    <label>Link</label>
+    <input id="link" type="url" placeholder="https://…" />
+  </div>
+</div>
+<div class="field">
+  <label>Caption</label>
+  <textarea id="caption" rows="5" style="min-height:120px;" placeholder="Skriv caption her…"></textarea>
+</div>
+<button class="btn" id="btn" onclick="send()">Tilføj til <span id="btnLabel">IDÉ BANK</span></button>
+<div class="msg" id="msg"></div>
+
+<script>
+const URL = 'https://script.google.com/macros/s/AKfycbwqfRhE6KLCUKPNzKA4SsvZj-pMdxqtLh1nr395k7oqjPIQpj8ePyVrA0J8tf7NtJiQ/exec';
+let sheet = 'IDÉ BANK';
+
+function setTab(s, el) {
+  sheet = s;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('btnLabel').textContent = s;
+  document.getElementById('msg').className = 'msg';
+}
+
+async function send() {
+  const ide = document.getElementById('ide').value.trim();
+  if (!ide) { show('err', 'Idé / Concept er påkrævet.'); return; }
+  const btn = document.getElementById('btn');
+  btn.disabled = true; btn.textContent = 'Sender…';
+  const p = new URLSearchParams({ sheet, ide,
+    kategori: document.getElementById('kategori').value.trim(),
+    inspiration: document.getElementById('inspiration').value.trim(),
+    dato: document.getElementById('dato').value,
+    caption: document.getElementById('caption').value.trim(),
+    link: document.getElementById('link').value.trim()
+  });
+  try {
+    const r = await fetch(URL + '?' + p);
+    const d = await r.json();
+    if (d.ok) { show('ok', '✓ Tilføjet til ' + sheet); clear(); }
+    else show('err', 'Fejl: ' + (d.error || 'Ukendt fejl.'));
+  } catch(e) { show('err', 'Fejl: ' + e.message); }
+  finally { btn.disabled = false; btn.innerHTML = 'Tilføj til <span id="btnLabel">' + sheet + '</span>'; }
+}
+
+function clear() { ['ide','kategori','inspiration','dato','caption','link'].forEach(id => document.getElementById(id).value = ''); }
+function show(t, m) { const e = document.getElementById('msg'); e.textContent = m; e.className = 'msg ' + t; setTimeout(() => e.className = 'msg', 5000); }
+</script>
+</body>
+</html>
